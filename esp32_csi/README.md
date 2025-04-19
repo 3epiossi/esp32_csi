@@ -17,4 +17,4 @@ This project is still unfinished, and I'm just a college student who doesn’t k
 - [ ] Use Kalman filter for denoising
 
 ### License
-This project is licensed under the GNU License – see the LICENSE.md file for details
+This project is licensed under the GNU License – see the [LICENSE.md](https://github.com/3epiossi/Neatlab/blob/main/esp32_csi/LICENSE.md) file for details
