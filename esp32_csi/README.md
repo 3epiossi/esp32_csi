@@ -1,4 +1,5 @@
 # Neatlab esp32 CSI(channel state information) project
+![](https://github.com/3epiossi/Neatlab/blob/main/doge.png)
 This project is still unfinished, and I'm just a college student who doesn’t know much yet. So if you have any questions about how this project works, please don’t open an issue—I probably don’t know the answer either 😅
 
 ### Acknowledgments
