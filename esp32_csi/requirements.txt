@@ -1,0 +1,14 @@
+pip
+torch
+numpy
+pandas
+opencv-python
+PyQt5
+pyqtgraph
+altair
+matplotlib
+tqdm
+argparse
+path
+pyserial
+
