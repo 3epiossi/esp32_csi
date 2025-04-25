@@ -318,4 +318,6 @@ docs/docusaurus/website/node_modules
 **/*.lock
 **/.vscode
 
-
+**/saved_models
+**/LSTMClassifier.py
+output/
