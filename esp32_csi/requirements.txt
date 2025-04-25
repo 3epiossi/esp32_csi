@@ -11,4 +11,5 @@ tqdm
 argparse
 path
 pyserial
-
+scikit-learn
+matplotlib
