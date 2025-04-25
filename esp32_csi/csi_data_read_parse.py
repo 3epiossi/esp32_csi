@@ -76,10 +76,10 @@ DATA_COLUMNS_NAMES = ["type", "id", "mac", "rssi", "rate", "sig_mode", "mcs", "b
 csi_data_array = np.zeros(
     [CSI_DATA_INDEX, CSI_DATA_COLUMNS], dtype=np.complex64)
 
-class csi_data_graphical_window(QWidget):
+class csi_data_graphical_amplitude_window(QWidget):
     def __init__(self):
         super().__init__()
-
+        self.setWindowTitle("CSI Amplitude Data")
         self.resize(1280, 720)
         self.plotWidget_ted = PlotWidget(self)
         self.plotWidget_ted.setGeometry(QtCore.QRect(0, 0, 1280, 720))
@@ -105,6 +105,205 @@ class csi_data_graphical_window(QWidget):
         self.csi_amplitude_array = np.abs(csi_data_array)
         for i in range(CSI_DATA_COLUMNS):
             self.curve_list[i].setData(self.csi_amplitude_array[:, i])
+
+# NOTE: The following class is similar to csi_data_graphical_amplitude_window
+# but it displays the phase of the CSI data instead of the amplitude.
+class csi_data_graphical_phase_window(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("CSI Phase Data")
+        self.resize(1280, 720)
+        self.plotWidget_ted = PlotWidget(self)
+        self.plotWidget_ted.setGeometry(QtCore.QRect(0, 0, 1280, 720))
+
+        self.plotWidget_ted.setYRange(-np.pi, np.pi)
+        self.plotWidget_ted.addLegend()
+
+        self.csi_amplitude_array = np.angle(csi_data_array)
+        self.curve_list = []
+
+        # print(f"csi_vaid_subcarrier_color, len: {len(csi_vaid_subcarrier_color)}, {csi_vaid_subcarrier_color}")
+
+        for i in range(CSI_DATA_COLUMNS):
+            curve = self.plotWidget_ted.plot(
+                self.csi_amplitude_array[:, i], name=str(i), pen=csi_vaid_subcarrier_color[i])
+            self.curve_list.append(curve)
+
+        self.timer = pq.QtCore.QTimer()
+        self.timer.timeout.connect(self.update_data)
+        self.timer.start(100)
+
+    def update_data(self):
+        self.csi_amplitude_array = np.angle(csi_data_array)
+        for i in range(CSI_DATA_COLUMNS):
+            self.curve_list[i].setData(self.csi_amplitude_array[:, i])
+
+
+# NOTE: The following class is similar to csi_data_graphical_amplitude_window
+# but it displays the I-Q graph of the CSI data instead of the amplitude.
+class csi_data_graphical_polar_window(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("CSI Polar Plot (IQ Data)")
+        self.resize(1280, 720)
+
+        self.plotWidget_ted = pq.GraphicsLayoutWidget(self)
+        self.plotWidget_ted.setGeometry(QtCore.QRect(0, 0, 1280, 720))
+        self.plot = self.plotWidget_ted.addPlot()
+        self.plot.setAspectLocked(True)
+
+        R = 50
+        radius_step = 10
+        angle_step = 30
+        self.plot.setXRange(-R, R)
+        self.plot.setYRange(-R, R)
+
+        self.add_polar_grid(R, radius_step, angle_step)
+
+        self.csi_real_array = np.real(csi_data_array[-1])
+        self.csi_imag_array = np.imag(csi_data_array[-1])
+        self.curve_list = []
+
+        for i in range(CSI_DATA_COLUMNS):
+            curve = self.plot.plot(
+                [self.csi_real_array[i]], [self.csi_imag_array[i]],
+                pen=None, symbol='o', symbolSize=9,
+                symbolBrush=pq.mkBrush(csi_vaid_subcarrier_color[i])
+            )
+            self.curve_list.append(curve)
+
+        self.timer = pq.QtCore.QTimer()
+        self.timer.timeout.connect(self.update_data)
+        self.timer.start(100)  
+
+    def add_polar_grid(self, R, radius_step, angle_step):
+
+        for angle in range(0, 360, angle_step):
+            rad = np.radians(angle)
+            x = R * np.cos(rad)
+            y = R * np.sin(rad)
+            self.plot.plot([0, x], [0, y], pen=pq.mkPen(color=(200, 200, 200), width=1))
+
+            label_x = (R + 10) * np.cos(rad)
+            label_y = (R + 10) * np.sin(rad)
+            text = pq.TextItem(f"{angle}°", anchor=(0.5, 0.5))
+            text.setPos(label_x, label_y)
+            self.plot.addItem(text)
+        
+        for r in range(radius_step, R + 1, radius_step):
+            circle = pq.QtWidgets.QGraphicsEllipseItem(-r, -r, 2 * r, 2 * r)
+            circle.setPen(pq.mkPen(color=(200, 200, 200), width=1))
+            self.plot.addItem(circle)
+
+    def update_data(self):
+        self.csi_real_array = np.real(csi_data_array[-1])
+        self.csi_imag_array = np.imag(csi_data_array[-1])
+
+        for i in range(CSI_DATA_COLUMNS):
+            self.curve_list[i].setData([self.csi_real_array[i]], [self.csi_imag_array[i]])
+
+
+# NOTE: The following class is similar to csi_data_graphical_amplitude_window
+# but it displays the amplitude, phase, and I-Q graph of the CSI data instead of the amplitude.
+class csi_data_graphical_combined_window(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("CSI Amplitude, Phase, and I-Q graph")
+        self.showMaximized()
+
+        layout = QGridLayout(self)
+
+        self.amplitude_plot = PlotWidget(self)
+        self.amplitude_plot.setYRange(-20, 100)
+        self.amplitude_plot.addLegend()
+        layout.addWidget(self.amplitude_plot, 0, 0)
+
+        self.phase_plot = PlotWidget(self)
+        self.phase_plot.setYRange(-np.pi, np.pi)
+        self.phase_plot.addLegend()
+        layout.addWidget(self.phase_plot, 1, 0)
+
+        self.polar_plot_widget = pq.GraphicsLayoutWidget(self)
+        self.polar_plot = self.polar_plot_widget.addPlot()
+        self.polar_plot.setAspectLocked(True)  
+        layout.addWidget(self.polar_plot_widget, 0, 1, 2, 1)  
+
+        R = 50
+        radius_step = 10
+        angle_step = 30
+        self.polar_plot.setXRange(-R, R)
+        self.polar_plot.setYRange(-R, R)
+
+        self.add_polar_grid(R, radius_step, angle_step)
+
+        self.csi_amplitude_array = np.abs(csi_data_array)
+        self.csi_phase_array = np.angle(csi_data_array)
+        self.csi_real_array = np.real(csi_data_array[-1])
+        self.csi_imag_array = np.imag(csi_data_array[-1])
+
+        self.amplitude_curves = []
+        self.phase_curves = []
+        self.polar_curves = []
+
+        for i in range(CSI_DATA_COLUMNS):
+            amplitude_curve = self.amplitude_plot.plot(
+                self.csi_amplitude_array[:, i], pen=csi_vaid_subcarrier_color[i]
+            )
+            self.amplitude_curves.append(amplitude_curve)
+
+            phase_curve = self.phase_plot.plot(
+                self.csi_phase_array[:, i], pen=csi_vaid_subcarrier_color[i]
+            )
+            self.phase_curves.append(phase_curve)
+
+            polar_curve = self.polar_plot.plot(
+                [self.csi_real_array[i]], [self.csi_imag_array[i]],
+                pen=None, symbol='o', symbolSize=9,
+                symbolBrush=pq.mkBrush(csi_vaid_subcarrier_color[i])
+            )
+            self.polar_curves.append(polar_curve)
+
+        self.timer = pq.QtCore.QTimer()
+        self.timer.timeout.connect(self.update_data)
+        self.timer.start(100)  
+
+    def add_polar_grid(self, R, radius_step, angle_step):
+
+        for angle in range(0, 360, angle_step):
+            rad = np.radians(angle)
+            x = R * np.cos(rad)
+            y = R * np.sin(rad)
+            self.polar_plot.plot([0, x], [0, y], pen=pq.mkPen(color=(200, 200, 200), width=1))
+
+            label_x = (R + 10) * np.cos(rad)
+            label_y = (R + 10) * np.sin(rad)
+            text = pq.TextItem(f"{angle}°", anchor=(0.5, 0.5))
+            text.setPos(label_x, label_y)
+            self.polar_plot.addItem(text)
+
+        for r in range(radius_step, R + 1, radius_step):
+            circle = pq.QtWidgets.QGraphicsEllipseItem(-r, -r, 2 * r, 2 * r)
+            circle.setPen(pq.mkPen(color=(200, 200, 200), width=1))
+            self.polar_plot.addItem(circle)
+
+    def update_data(self):
+
+        self.csi_amplitude_array = np.abs(csi_data_array)
+        self.csi_phase_array = np.angle(csi_data_array)
+        self.csi_real_array = np.real(csi_data_array[-1])
+        self.csi_imag_array = np.imag(csi_data_array[-1])
+
+        for i in range(CSI_DATA_COLUMNS):
+            self.amplitude_curves[i].setData(self.csi_amplitude_array[:, i])
+
+        for i in range(CSI_DATA_COLUMNS):
+            self.phase_curves[i].setData(self.csi_phase_array[:, i])
+
+        for i in range(CSI_DATA_COLUMNS):
+            self.polar_curves[i].setData([self.csi_real_array[i]], [self.csi_imag_array[i]])
+
+
+
 
 
 def csi_data_read_parse(port: str, csv_writer, log_file_fd):
@@ -210,7 +409,7 @@ if __name__ == '__main__':
                         help="Serial port number of csv_recv device")
     parser.add_argument('-c', '--classify', dest='class_name', action='store', default='./data/default', required=True,
                         help="Classify the data and save it to a file")
-    parser.add_argument('-l', '--log', dest="log_file", action="store", default="./csi_data_log.txt",
+    parser.add_argument('-l', '--log', dest="log_file", action="store", default="./output/logs/csi_data.log",
                         help="Save other serial data the bad CSI data to a log file")
     
 
@@ -223,7 +422,16 @@ if __name__ == '__main__':
     subthread = SubThread(serial_port, class_name, log_file_name)
     subthread.start()
 
-    window = csi_data_graphical_window()
-    window.show()
+    # amplitude_window = csi_data_graphical_amplitude_window()
+    # amplitude_window.show()
+
+    # phase_window = csi_data_graphical_phase_window()
+    # phase_window.show()
+    
+    # polar_window = csi_data_graphical_polar_window()
+    # polar_window.show()
+
+    combined_window = csi_data_graphical_combined_window()
+    combined_window.show()
 
     sys.exit(app.exec())
