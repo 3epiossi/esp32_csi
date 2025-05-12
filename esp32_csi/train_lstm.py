@@ -8,9 +8,10 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.model_selection import train_test_split
 import numpy as np
 
-from dataset import CSIDataset
+from dataprocess.dataset import CSIDataset
 from metrics import get_train_metric
 from models import SimpleLSTMClassifier
 
@@ -47,17 +48,26 @@ def setup_logger(debug, logfile_path):
     return logger
 
 
-def load_data(class_folder, batch_size, window_size):
+
+def load_data(class_folder, batch_size, window_size, val_split=0.2):
+    
     logging.info("Loading dataset from: %s", class_folder)
 
     class_names = os.listdir(class_folder)
-    train_dataset = CSIDataset(class_names, window_size)
-    val_dataset = train_dataset  # 如果需要區分驗證資料，可以自行分割
+    all_data = CSIDataset(class_names, window_size)
+
+    # Split dataset into training and validation sets
+    train_indices, val_indices = train_test_split(
+        range(len(all_data)), test_size=val_split, random_state=42
+    )
+    train_dataset = torch.utils.data.Subset(all_data, train_indices)
+    val_dataset = torch.utils.data.Subset(all_data, val_indices)
 
     trn_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
     val_dl = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
-    logging.info("Dataset size: %d samples", len(train_dataset))
+    logging.info("Training dataset size: %d samples", len(train_dataset))
+    logging.info("Validation dataset size: %d samples", len(val_dataset))
     return trn_dl, val_dl
 
 
@@ -229,7 +239,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=20, help='Number of epochs')
     parser.add_argument('--batch-size', type=int, default=1, help='Batch size')
     parser.add_argument('--lr', type=float, default=0.00146, help='Learning rate')
-    parser.add_argument('--input-dim', type=int, default=76, help='Input feature dimension')
+    parser.add_argument('--input-dim', type=int, default=38, help='Input feature dimension')
     parser.add_argument('--hidden-dim', type=int, default=256, help='Hidden layer dimension')
     parser.add_argument('--layers', type=int, default=2, help='Number of LSTM layers')
     parser.add_argument('--output-dim', type=int, default=2, help='Number of output classes')
