@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
-from dataprocess.filter import IIR_filter_torch, kalman_filter_torch
+from dataprocess.filter import IIR_filter_torch
 from dataprocess.read_csv import *
 CLASS_FOLDER = os.path.join(os.path.dirname(__file__), "..", "data")
 
@@ -20,7 +20,7 @@ class CSIDataset(Dataset):
             np.concatenate([amp, phase], axis=1)
             for amp, phase in zip(self.amplitudes, self.phases)
         ]
-        self.amplitudes = IIR_filter_torch(torch.from_numpy(self.amplitudes).float())
+        self.amplitudes = IIR_filter_torch(torch.from_numpy(self.amplitudes).float(), alpha=0.9)
         if debug:
             logger.debug(f"Dataset created with {len(self.labels)} samples")
 
