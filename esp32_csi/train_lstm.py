@@ -202,8 +202,8 @@ def train(args):
             epoch_loss += loss.item()
 
 
-        train_loss, train_correct, _, train_acc = get_train_metric(model, trn_dl, criterion, args.batch_size, "Training epoch: ")
         val_loss, val_correct, _, val_acc = get_train_metric(model, val_dl, criterion, args.batch_size, "Validation epoch: ")
+        train_loss, train_correct, _, train_acc = get_train_metric(model, trn_dl, criterion, args.batch_size, "Training epoch: ")
         epoch_losses.append((train_loss / len(trn_dl), val_loss / len(val_dl)))
 
 
@@ -215,8 +215,17 @@ def train(args):
             trials = 0
             best_acc = val_acc
             os.makedirs('saved_models', exist_ok=True)
-            torch.save(model.state_dict(), 'saved_models/simple_lstm_best.pt')
-            logging.info("New best model saved with accuracy: %.2f%%", best_acc * 100)
+
+            # 假設 dummy_input 是模型的輸入示例，您需要根據模型的實際輸入形狀來定義它
+            dummy_input = torch.randn(1, args.window_size, args.input_dim, requires_grad=False).to(device).float()  # 替換 input_size 為您的模型輸入大小
+            torch.onnx.export(model, dummy_input, 'saved_models/simple_lstm_best.onnx', 
+                            export_params=True, opset_version=10, 
+                            do_constant_folding=True, 
+                            input_names=['input'], 
+                            output_names=['output'])
+
+            logging.info("New best model saved in ONNX format with accuracy: %.2f%%", best_acc * 100)
+
         else:
             trials += 1
             if trials >= args.patience:

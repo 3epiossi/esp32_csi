@@ -16,11 +16,12 @@ class CSIDataset(Dataset):
         self.window_size = window_size
         self.amplitudes, self.phases, self.labels = read_all_csv_from_class(class_names, window_size, debug)
         self.amplitudes, self.phases = np.array(self.amplitudes), np.array(self.phases)
+        self.amplitudes = (self.amplitudes - self.amplitudes.mean()) / (self.amplitudes.std() + 1e-8)
         self.features = [
             np.concatenate([amp, phase], axis=1)
             for amp, phase in zip(self.amplitudes, self.phases)
         ]
-        self.amplitudes = IIR_filter_torch(torch.from_numpy(self.amplitudes).float(), alpha=0.9)
+        # self.amplitudes = IIR_filter_torch(torch.from_numpy(self.amplitudes).float(), alpha=0.9)
         if debug:
             logger.debug(f"Dataset created with {len(self.labels)} samples")
 

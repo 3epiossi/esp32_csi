@@ -51,7 +51,7 @@ class SimpleLSTMClassifier(nn.Module):
         if self.hidden is None:
             self.hidden = self.init_hidden(x.size(0))
 
-        out, _ = self.lstm(x, self.hidden)
+        out, _ = self.lstm(x)
         self.logger.debug(f"LSTM output shape: {out.shape}")
 
         out = self.hidden2label(out[:, -1, :])

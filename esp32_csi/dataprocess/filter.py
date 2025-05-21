@@ -1,6 +1,9 @@
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 from dataprocess.read_csv import read_csi_from_csv
 def get_device():
     if torch.backends.mps.is_available():
@@ -65,7 +68,10 @@ def kalman_filter_torch(data: torch.Tensor, Q=1e-5, R=1e-2, device=None) -> torc
 
 def main():
     # 模擬資料：100 個時間點，3 維狀態
-    amplitudes, phases = read_csi_from_csv("/Users/chang/github/Neatlab/esp32_csi/data/metal/2025-05-09 14:56:49.929084.csv")
+    parser = argparse.ArgumentParser(description="Apply filter to raw data.")
+    parser.add_argument('--path', type=str, help='raw data\'s path', required=True)
+    args = parser.parse_args()
+    amplitudes, phases = read_csi_from_csv(args.path)
     measurements = np.concatenate((amplitudes, phases), axis=1).astype(np.float32)
 
     # 轉換成 PyTorch Tensor
@@ -75,15 +81,22 @@ def main():
     device = get_device()
     filtered_data = IIR_filter_torch(torch_data, alpha=0.1, device=device)
 
-    # 可視化第 0 維
-    plt.figure(figsize=(10, 5))
-    plt.plot(measurements[:, 0], label='Original (dim 0)', alpha=0.5)
-    plt.plot(filtered_data[:, 0], label='Filtered (dim 0)', linewidth=2)
-    plt.title('One-dimensional filtering example')
-    plt.xlabel('Time step')
-    plt.ylabel('Value')
-    plt.legend()
-    plt.grid(True)
+    num_dims = measurements.shape[1]
+
+    fig, axes = plt.subplots(num_dims, 1, figsize=(10, 3 * num_dims), sharex=True)
+
+    if num_dims == 1:
+        axes = [axes]  # 保持 axes 可迭代
+
+    for i, ax in enumerate(axes):
+        ax.plot(measurements[:, i], label=f'Original (dim {i})', alpha=0.5)
+        ax.plot(filtered_data[:, i], label=f'Filtered (dim {i})', linewidth=2)
+        # ax.set_ylabel('Value')
+        ax.set_title(f'Dimension {i}')
+        ax.legend()
+        ax.grid(True)
+
+    axes[-1].set_xlabel('Time step')
     plt.tight_layout()
     plt.show()
 

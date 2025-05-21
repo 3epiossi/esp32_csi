@@ -422,8 +422,8 @@ if __name__ == '__main__':
     subthread = SubThread(serial_port, class_name, log_file_name)
     subthread.start()
 
-    # amplitude_window = csi_data_graphical_amplitude_window()
-    # amplitude_window.show()
+    amplitude_window = csi_data_graphical_amplitude_window()
+    amplitude_window.show()
 
     # phase_window = csi_data_graphical_phase_window()
     # phase_window.show()
@@ -431,7 +431,7 @@ if __name__ == '__main__':
     # polar_window = csi_data_graphical_polar_window()
     # polar_window.show()
 
-    combined_window = csi_data_graphical_combined_window()
-    combined_window.show()
+    # combined_window = csi_data_graphical_combined_window()
+    # combined_window.show()
 
     sys.exit(app.exec())
