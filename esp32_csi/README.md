@@ -20,14 +20,12 @@ This project is still unfinished, and I'm just a college student who doesn’t k
 - [x] Collect a large amount of experimental CSI data.
   * It can be considered as completing a part of the project, which can distinguish whether there are plastic bottles inside boxes or bags.
 - [ ] Send the trained model parameters to ESP32 with TinyML so that the ESP32 can perform prediction(edge computing). 
-  * Starting from this task, I will use Keras to restructure the entire project for easier deployment of Tiny ML.
+  * Starting from this task, I will use Keras to restructure the entire project for easier deployment of TinyML.
 - [ ] Test the model in practice
-- [ ] Use Kalman filter for denoising
-- [ ] Use PCA to reduce the dimension of data
 
 ## Get Started
 #### Hardware
-- Two ESP32-WROOM-32U modules
+- Two ESP32-32U modules
 
 ### Virtual Environment
 - Miniconda
