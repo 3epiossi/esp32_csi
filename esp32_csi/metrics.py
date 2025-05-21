@@ -1,42 +1,40 @@
-import torch
-from torch.nn import functional as F
+import tensorflow as tf
+import numpy as np
 from tqdm import tqdm
-import platform
 
 def get_device():
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    elif torch.backends.mps.is_available() and platform.system() == "Darwin":
-        return torch.device("mps")
+    # Keras/TensorFlow 自動選擇可用設備
+    physical_devices = tf.config.list_physical_devices('GPU')
+    if physical_devices:
+        return '/GPU:0'
     else:
-        return torch.device("cpu")
+        return '/CPU:0'
 
+def get_train_metric(model, dataset, loss_fn, batch_size, msg):
+    """
+    Args:
+        model: Keras model
+        dataset: tf.data.Dataset yielding (x, y)
+        loss_fn: tf.keras.losses.Loss instance
+        batch_size: int
+        msg: str, tqdm description
+    Returns:
+        total_loss, correct, total, acc
+    """
+    total_loss = 0.0
+    correct = 0
+    total = 0
 
-def get_train_metric(model, dl, criterion, batch_size, msg, device=None):
-    if device is None:
-        device = get_device()
+    # 設定為評估模式
+    for x_val, y_val in tqdm(dataset, desc=msg):
+        logits = model(x_val, training=False)
+        loss = loss_fn(y_val, logits)
+        total_loss += loss.numpy() * x_val.shape[0]
 
-    model.eval()
-    correct, total, total_loss = 0, 0, 0
-
-    model.hidden = model.init_hidden(batch_size)
-
-    for x_val, y_val in tqdm(dl, total=len(dl), desc=msg):
-        if x_val.size(0) != batch_size:
-            continue
-
-        x_val = x_val.float().to(device)
-        y_val = y_val.to(device)
-
-        model.hidden = model.init_hidden(x_val.size(0))
-        out = model(x_val)
-
-        loss = criterion(out, y_val.long())
-        total_loss += loss.item()
-
-        preds = F.log_softmax(out, dim=1).argmax(dim=1)
-        total += y_val.size(0)
-        correct += (preds == y_val).sum().item()
+        preds = tf.argmax(logits, axis=1)
+        labels = tf.cast(tf.reshape(y_val, [-1]), tf.int64)
+        correct += tf.reduce_sum(tf.cast(preds == labels, tf.int32)).numpy()
+        total += x_val.shape[0]
 
     acc = correct / total if total > 0 else 0
     return total_loss, correct, total, acc
