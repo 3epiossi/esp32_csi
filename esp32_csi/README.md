@@ -22,7 +22,7 @@ This project is still unfinished, and I'm just a college student who doesn’t k
 - [x] Send the trained model parameters to ESP32 with TinyML so that the ESP32 can perform prediction(edge computing). 
   * Starting from this task, I will use Keras to restructure the entire project for easier deployment of TinyML.
 - [ ] Test the model in practice and optimize it.
-  * Big problem: the system always predict something inside the box, no matter whether there is a item inside the box.
+  * Big problem: the system always predicts something inside the box—even when there’s nothing there.
   ![](https://github.com/3epiossi/Neatlab/blob/main/esp32_csi/demo/something_inside.png)
 
 ## Get Started
