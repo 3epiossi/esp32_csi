@@ -23,7 +23,7 @@ This project is still unfinished, and I'm just a college student who doesn’t k
   * Starting from this task, I will use Keras to restructure the entire project for easier deployment of TinyML.
 - [ ] Test the model in practice and optimize it.
   * Big problem: the system always predict something inside the box, no matter whether there is a item inside the box.
-  ![](![](https://github.com/3epiossi/Neatlab/blob/main/esp32_csi/something_inside.png)) 
+  ![](https://github.com/3epiossi/Neatlab/blob/main/esp32_csi/demo/something_inside.png)
 
 ## Get Started
 #### Hardware
