@@ -2,7 +2,7 @@
 # The following lines of boilerplate have to be in your project's CMakeLists
 # in this exact order for cmake to work correctlycmake_minimum_required(VERSION 3.5)
 cmake_minimum_required(VERSION 3.5)
-add_compile_options(-fdiagnostics-color=always)
+add_compile_options(-fdiagnostics-color=always -Os)
 # target_compile_definitions(your_target PRIVATE USE_ALL_OPS_RESOLVER=1)
 set(EXTRA_COMPONENT_DIRS 
 )

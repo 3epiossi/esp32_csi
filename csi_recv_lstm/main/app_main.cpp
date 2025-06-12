@@ -23,8 +23,8 @@ extern "C" {
 #include "tfModel.h"
 
 static QueueHandle_t queue;
-#define STACK_SIZE 20 * 1024
-// #define TRAIN
+#define STACK_SIZE 4 * 1024
+#define TRAIN
 
 #ifdef TRAIN
     #define WINDOW_SIZE 1
@@ -32,20 +32,21 @@ static QueueHandle_t queue;
     #define LLTF_INTERVAL 2
     #define HT_LFT_INTERVAL 2
 #else
-    #define WINDOW_SIZE 20
-    #define LLTF 1
-    #define HT_LFT 1
-    #define CHANNEL_NUM (1 + (LLTF << 1) + (HT_LFT << 1))
+    #define RSSI_ONLY
+    #define WINDOW_SIZE TF_NUM_INPUTS_TIMESTEP
+    #define LLTF 0
+    #define HT_LFT 0
+    #define CHANNEL_NUM TF_NUM_INPUTS_SUBCARRIER
     #define LLTF_INTERVAL ((26/LLTF+1) << 1)
     #define HT_LFT_INTERVAL ((28/HT_LFT+1) << 1)
-    #define TENSOR_ARENA_SIZE (60 * 1024)
+    #define TENSOR_ARENA_SIZE (100 * 1024)
     static uint8_t tensor_arena[TENSOR_ARENA_SIZE];
     namespace {
         const tflite::Model* model = nullptr;
         tflite::MicroInterpreter* interpreter = nullptr;
         tflite::MicroMutableOpResolver<TF_NUM_OPS>* resolver = nullptr;
     }
-    char* prediction[TF_NUM_OUTPUTS] = {"something inside","empty"};
+    char* prediction[TF_NUM_OUTPUTS] = {"empty","metal","plastic"};
 #endif
 
 #define CONFIG_LESS_INTERFERENCE_CHANNEL   11
@@ -101,6 +102,7 @@ static void wifi_csi_rx_cb(void *ctx, wifi_csi_info_t *info)
     float* data = new float[CHANNEL_NUM];
     data[0] = -(float)rx_ctrl->rssi;
     uint32_t i = 1;
+    #ifndef RSSI_ONLY
     for(uint32_t j = 12; j < 64; j += LLTF_INTERVAL, ++i){
         float img = (info->buf[j]);
         float rel = (info->buf[j+1]);
@@ -121,6 +123,7 @@ static void wifi_csi_rx_cb(void *ctx, wifi_csi_info_t *info)
         float rel = (info->buf[j+1]);
         data[i] = sqrt(img * img + rel * rel);
     }
+    #endif
     if (i != CHANNEL_NUM) {
         ets_printf("Error: i=%u, CHANNEL_NUM=%u\n", i, CHANNEL_NUM);
     }
@@ -173,6 +176,12 @@ bool lstm_init() {
     return true;
 }
 
+void normalize_input(float* input, int len) {
+    for (int i = 0; i < len; ++i) {
+        input[i] = (input[i] - CSI_MEAN) / (CSI_STD + 1e-8f);
+    }
+}
+
 bool predict_lstm(float* input_data, int timestep, int subcarrier) {
     if (!interpreter) {
         printf("Interpreter not initialized. Call lstm_init() first.\n");
@@ -222,6 +231,9 @@ void taskReceive(void* pvParameters){
     float input[WINDOW_SIZE][CHANNEL_NUM];
     float rssi_value = 100.0;
     uint8_t trigger;
+    #ifndef TRAIN
+        printf("predict starting\n");
+    #endif
     for(;;){
         trigger = 0;
         for(uint32_t i = 0; i < WINDOW_SIZE;){
@@ -237,7 +249,7 @@ void taskReceive(void* pvParameters){
                 printf("\n");
             #endif
             #ifndef TRAIN
-                if(trigger == 0 && ((input[i][0] - rssi_value) < 1.0)){
+                if(trigger == 0 && (abs(input[i][0] - rssi_value) < 3.0)){
                     rssi_value = input[i][0];
                     continue;
                 }
@@ -250,7 +262,8 @@ void taskReceive(void* pvParameters){
         }
         // 這裡將 int32_t 轉 float 並呼叫 predict_lstm
         #ifndef TRAIN
-            predict_lstm(&input[0][0], TF_NUM_INPUTS_TIMESTEP, TF_NUM_INPUTS_SUBCARRIER);
+            normalize_input(&input[0][0], WINDOW_SIZE * CHANNEL_NUM);
+            predict_lstm(&input[0][0], WINDOW_SIZE, CHANNEL_NUM);
         #endif
     }
 }

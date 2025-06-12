@@ -15,6 +15,7 @@ import re
 from dataprocess.dataset import create_csi_dataset, get_tf_dataset
 # from models import *
 
+
 def setup_logger(debug, logfile_path):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
@@ -29,9 +30,11 @@ def setup_logger(debug, logfile_path):
     return logger
 
 def load_data(class_folder, batch_size, window_size, val_split=0.2, debug=False, logger=None):
+    global csi_mean, csi_std
     logging.info("Loading dataset from: %s", class_folder)
     class_names = [d for d in os.listdir(class_folder) if os.path.isdir(os.path.join(class_folder, d))]
-    features, labels = create_csi_dataset(class_folder, class_names, window_size, debug=debug, logger=logger)
+    features, labels = create_csi_dataset(class_folder, class_names, window_size, debug=debug, logger=logger, args=args)
+    csi_mean, csi_std = float(np.mean(features)), float(np.std(features))
     input_dim = features[0].shape[1] if len(features) else 0
     logging.info(f"input_dim : {input_dim}")
     X_train, X_val, y_train, y_val = train_test_split(features, labels, test_size=val_split, random_state=42)
@@ -69,7 +72,7 @@ def plot_results(history, model, val_ds, class_names, args):
     plt.savefig(os.path.join(figure_dir, 'confusion_matrix.png'))
     plt.close()
 
-def build_onelstm_sequential(input_shape, hidden_dim, output_dim, dropout=0.2):
+def build_onelstm_sequential(input_shape, hidden_dim, output_dim):
     model = keras.Sequential()
     model.add(layers.Input(shape=input_shape))
     model.add(layers.LSTM(hidden_dim, activation='tanh', return_sequences=False, unroll=True))
@@ -79,11 +82,12 @@ def build_onelstm_sequential(input_shape, hidden_dim, output_dim, dropout=0.2):
 
 
 def train(args, logger):
+    global csi_mean, csi_std
     train_ds, val_ds, class_names, input_dim = load_data(args.data_path, args.batch_size, args.window_size, val_split=0.2, debug=args.debug, logger=logger)
     logger = logging.getLogger()
 
     model = build_onelstm_sequential(
-        input_shape=(args.window_size, args.input_dim),
+        input_shape=(args.window_size, input_dim),
         hidden_dim=args.hidden_dim,
         output_dim=args.output_dim
     )
@@ -151,16 +155,20 @@ def train(args, logger):
         # Convert to C header file
         model_h_path = os.path.join(args.output_dir, 'tfModel.h')
         
+        from dataprocess.dataset import csi_mean, csi_std
+        logger.debug(f"csi_mean = {csi_mean}, csi_std = {csi_std}")
+
         try:
             import subprocess
-            
             # Write header file beginning
             with open(model_h_path, 'w') as f:
                 f.write(f'#define TF_NUM_INPUTS_TIMESTEP {args.window_size}\n')
-                f.write(f'#define TF_NUM_INPUTS_SUBCARRIER {args.input_dim}\n')
-                f.write(f'#define TF_NUM_INPUTS ({args.window_size}*{args.input_dim})\n')
+                f.write(f'#define TF_NUM_INPUTS_SUBCARRIER {input_dim}\n')
+                f.write(f'#define TF_NUM_INPUTS ({args.window_size}*{input_dim})\n')
                 f.write(f'#define TF_NUM_OUTPUTS {args.output_dim}\n')
                 f.write(f'#define TF_NUM_OPS {model.count_params()}\n')  # 或手動填寫 op 數
+                f.write(f'#define CSI_MEAN {csi_mean:.8f}\n')
+                f.write(f'#define CSI_STD {csi_std:.8f}\n')
                 f.write('\nconst unsigned char tfModel[] = {\n')
             
             # Convert tflite model to C array format
@@ -200,7 +208,6 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=50, help='Number of epochs')
     parser.add_argument('--batch-size', type=int, default=1, help='Batch size')
     parser.add_argument('--lr', type=float, default=0.00146, help='Learning rate')
-    parser.add_argument('--input-dim', type=int, default=13, help='Input feature dimension')
     parser.add_argument('--hidden-dim', type=int, default=16, help='Hidden layer dimension')
     parser.add_argument('--layers', type=int, default=1, help='Number of LSTM layers')
     parser.add_argument('--output-dim', type=int, default=2, help='Number of output classes')
@@ -212,6 +219,8 @@ if __name__ == '__main__':
     parser.add_argument('--patience', type=int, default=10, help='Early stopping patience')
     parser.add_argument('--data-path', type=str, default=os.path.join(os.path.dirname(__file__), "data"), help='Path to data folder')
     parser.add_argument('--output-dir', type=str, default=os.path.join(os.path.dirname(__file__), "output"), help='Path to output folder')
+    parser.add_argument('--lltf', type=int, default=1, help='Specified number of subcarrier in LLTF')
+    parser.add_argument('--ht-lft', type=int, default=1, help='Specified number of subcarrier in HT_LFT')
 
     args = parser.parse_args()
     logfile_dir = os.path.join(args.output_dir, 'logs')

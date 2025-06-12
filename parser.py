@@ -144,7 +144,7 @@ def csi_data_read_parse(port: str, csv_writer, csv_file, log_file_fd):
         csi_data_array[-1] = data.astype(np.float32)
         print(csi_data_array[-1])
         try:
-            csv_writer.writerow(csi_data_array[-1].tolist())
+            csv_writer.writerow(raw_data)
             csv_file.flush()  # 若在 class 裡
         except Exception as e:
             print("寫入 CSV 發生錯誤：", e)

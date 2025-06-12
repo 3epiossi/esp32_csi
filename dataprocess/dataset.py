@@ -7,9 +7,14 @@ import tensorflow as tf
 from tqdm import tqdm
 from dataprocess.read_csv import *
 
-def create_csi_dataset(class_folder, class_names, window_size, debug=False, logger=None):
-    amplitudes, labels = read_all_csv_from_class(class_folder, class_names, window_size, debug, logger)
+csi_mean = 0.0
+csi_std = 1.0
+
+def create_csi_dataset(class_folder, class_names, window_size, debug=False, logger=None, args=None):
+    global csi_mean, csi_std
+    amplitudes, labels = read_all_csv_from_class(class_folder, class_names, window_size, debug, logger, args)
     amplitudes = np.array(amplitudes)
+    csi_mean, csi_std = amplitudes.mean(), amplitudes.std()
     amplitudes = (amplitudes - amplitudes.mean()) / (amplitudes.std() + 1e-8)
     labels = np.array(labels)
     if debug:
@@ -30,6 +35,8 @@ if __name__ == '__main__':
     parser.add_argument('--logfile', type=str, default='dataset.log', help='Log file name (default: dataset.log)')
     parser.add_argument('--output-dir', type=str, default=os.path.join(os.path.dirname(__file__), "..", "output"), help='Path to output folder')
     parser.add_argument('--class-folder', type=str, default=os.path.join(os.path.dirname(__file__), "..", "data"), help='Path to class folder')
+    parser.add_argument('--lltf', type=int, default=1, help='Specified number of subcarrier in LLTF')
+    parser.add_argument('--ht-lft', type=int, default=1, help='Specified number of subcarrier in HT_LFT')
     args = parser.parse_args()
 
     window_size = args.window
@@ -58,8 +65,11 @@ if __name__ == '__main__':
     logger.info(f"class_folder: {class_folder}")
 
     class_names = [d for d in os.listdir(class_folder) if os.path.isdir(os.path.join(class_folder, d))]
-    features, labels = create_csi_dataset(class_folder, class_names, window_size, debug=debug, logger=logger)
+    features, labels = create_csi_dataset(class_folder, class_names, window_size, debug=debug, logger=logger, args=args)
     dataset = get_tf_dataset(features, labels, batch_size=1, shuffle=False)
 
     for i, (x_batch, y_batch) in tqdm(enumerate(dataset), total=len(features), desc="Loading dataset"):
         logger.info(f"Batch {i} - x_batch shape: {x_batch.shape}, y_batch: {y_batch.numpy()}")
+        print(x_batch.numpy(), y_batch.numpy())
+        if i >= 2:
+            break
