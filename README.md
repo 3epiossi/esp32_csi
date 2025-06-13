@@ -24,12 +24,12 @@ This project can perform edge computing to predict the material inside the box�
 - [x] Test the model in practice and optimize it.
   * Big problem: the system always predicts something inside the box—even when there’s nothing there.
   
-  <img src="demo/something_inside.png" width="200"/>
+  <img src="demo/something_inside.png" width="500"/>
   
   > ⚠️ **Notice**  
   > maybe solved(not the best) :
 
-  <img src="demo/confusion_matrix.png" width="200"/>
+  <img src="demo/confusion_matrix.png" width="500"/>
 
 ## Get Started
 Following operations are based on Macos.
@@ -105,7 +105,7 @@ Following operations are based on Macos.
       ```
      This program will train LSTM model base on your data collected in step 7, and gives you Loss curve, Confusion matrix and tfModel.h as the result.
 
-    <img src="demo/loss_curve.png" width="200"/> <img src="demo/confusion_matrix.png" width="200"/>
+    <img src="demo/loss_curve.png" width="300"/> <img src="demo/confusion_matrix.png" width="300"/>
 
 10. Move tfModel.h from `output/tfModel.h` to `csi_recv_lstm/main/tfModel.h`
     ```bash
