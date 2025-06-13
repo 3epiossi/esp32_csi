@@ -24,9 +24,9 @@ extern "C" {
 
 static QueueHandle_t queue;
 #define STACK_SIZE 4 * 1024
-#define TRAIN
+#define DATA_COLLECTION_MODE
 
-#ifdef TRAIN
+#ifdef DATA_COLLECTION_MODE
     #define WINDOW_SIZE 1
     #define CHANNEL_NUM (1 + 52 + 56)
     #define LLTF_INTERVAL 2
@@ -137,7 +137,7 @@ static void wifi_csi_rx_cb(void *ctx, wifi_csi_info_t *info)
     portYIELD_FROM_ISR(xhigherprioritytaskwoken);
 }
 
-#ifndef TRAIN
+#ifndef DATA_COLLECTION_MODE
 bool lstm_init() {
     model = tflite::GetModel(tfModel);
     if (model->version() != TFLITE_SCHEMA_VERSION) {
@@ -231,7 +231,7 @@ void taskReceive(void* pvParameters){
     float input[WINDOW_SIZE][CHANNEL_NUM];
     float rssi_value = 100.0;
     uint8_t trigger;
-    #ifndef TRAIN
+    #ifndef DATA_COLLECTION_MODE
         printf("predict starting\n");
     #endif
     for(;;){
@@ -242,13 +242,13 @@ void taskReceive(void* pvParameters){
             }
             memcpy(input[i], data, CHANNEL_NUM * sizeof(float));
             delete[] data;
-            #ifdef TRAIN
+            #ifdef DATA_COLLECTION_MODE
                 for(int j = 0; j < CHANNEL_NUM; ++j){
                     printf("%f ", input[i][j]);
                 }
                 printf("\n");
             #endif
-            #ifndef TRAIN
+            #ifndef DATA_COLLECTION_MODE
                 if(trigger == 0 && (abs(input[i][0] - rssi_value) < 3.0)){
                     rssi_value = input[i][0];
                     continue;
@@ -261,7 +261,7 @@ void taskReceive(void* pvParameters){
             ++i;
         }
         // 這裡將 int32_t 轉 float 並呼叫 predict_lstm
-        #ifndef TRAIN
+        #ifndef DATA_COLLECTION_MODE
             normalize_input(&input[0][0], WINDOW_SIZE * CHANNEL_NUM);
             predict_lstm(&input[0][0], WINDOW_SIZE, CHANNEL_NUM);
         #endif
@@ -295,7 +295,7 @@ extern "C" void app_main()
     ESP_ERROR_CHECK(ret);
     wifi_init();
     wifi_csi_init();
-    #ifndef TRAIN
+    #ifndef DATA_COLLECTION_MODE
     if (!lstm_init()) {
         printf("LSTM init failed!\n");
         return;

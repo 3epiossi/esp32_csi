@@ -1,7 +1,7 @@
 # Neatlab esp32 CSI(channel state information) project
 ![](/demo/doge.png)
-This project is still unfinished, and I'm just a college student who doesn’t know much yet. So if you have any questions about how this project works, please don’t open an issue—I probably don’t know the answer either 😅
-
+This project can perform edge computing to predict the material inside the box—no need to send data back to a PC.
+![](/demo/demo_video.gif)
 ## Acknowledgments
 1. **Espressif Official**: 
    Without your [esp-idf](https://github.com/espressif/esp-idf) and [esp-csi](https://github.com/espressif/esp-csi) examples, I wouldn’t even know where to start.
@@ -23,73 +23,113 @@ This project is still unfinished, and I'm just a college student who doesn’t k
   * Starting from this task, I will use Keras to restructure the entire project for easier deployment of TinyML.
 - [x] Test the model in practice and optimize it.
   * Big problem: the system always predicts something inside the box—even when there’s nothing there.
-  ![](/demo/something_inside.png)
-  solved(not fully) : ![](/demo/confusion_matrix.png)
+  
+  <img src="demo/something_inside.png" width="200"/>
+  
+  > ⚠️ **Notice**  
+  > maybe solved(not the best) :
+
+  <img src="demo/confusion_matrix.png" width="200"/>
 
 ## Get Started
-#### Hardware
+Following operations are based on Macos.
+### Hardware
 - Two ESP32-32U modules
-
+- Two antennas
+- One Laptop
+![](/demo/setting.jpg)
 ### Virtual Environment
 - Miniconda
 
 ### Python Version
-- 3.10.16
+- 3.10.16(for tensorflow env)
+- 3.13.2 (for esp_idf env)
 
 ### Setup Instructions
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/3epiossi/Neatlab.git
-   cd esp32_csi
-   ```
-2. Set Up Python Environment
+      ```bash
+      git clone https://github.com/3epiossi/Neatlab.git
+      cd esp32_csi
+      ```
+
+2. Set Up Tensorflow Environment
    Activate your Python virtual environment. This project uses Python 3.10.16 (Miniconda recommended):
-   ```bash
-   conda activate <your_env_name>
-   ```
+      ```bash
+      conda create -n tf_env python=3.10.16
+      conda activate tf_env
+      ```
+
 3. Install Python Dependencies
-   ```bash
-   pip install -r requirements.txt
-   ```
+      ```bash
+      pip install -r requirements.txt
+      ```
+
 4. **Install ESP-IDF**
    Follow the [official ESP-IDF documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/) to install the latest version of **ESP-IDF** for your platform (macOS/Windows/Linux).
-5. Build and flash the sender firmware
-   ```bash
-   cd csi_send
-   idf.py set-target esp32
-   idf.py build
-   idf.py -p <PORT> [-b BAUD] flash
-   ```
-6. Build and flash the receiver firmware
-   ```bash
-   cd csi_send
-   idf.py set-target esp32
-   idf.py build
-   idf.py -p <PORT> [-b BAUD] flash
-   ```
-7. **Collect Data Points**
+
+5. Create esp_idf env (recommand to open another terminal tab for convenience)
+      ```bash
+      conda create -n esp_idf_env python=3.13.2
+      conda activate tf_env
+      get_idf
+      ```
+
+6.  Build and flash the sender firmware
+      ```bash
+      cd csi_send
+      idf.py set-target esp32
+      idf.py build
+      idf.py -p <PORT> [-b BAUD] flash
+      ```
+   
+7. Build and flash the receiver firmware
+      ```bash
+      cd csi_recv_lstm
+      idf.py set-target esp32
+      idf.py build
+      idf.py -p <PORT> [-b BAUD] flash
+      ```
+
+8. **Collect Data Points**
    
    Run the following command:
-   ```bash
-   python csi_data_read_parse.py -p <PORT> -c <label_class_name>
-   ```
+      ```bash
+      python parser.py -p <PORT> -c <label_class_name>
+      ```
    This will open a window displaying real-time CSI data visualization.
    Once you close the window, the program will terminate and one data point will be collected and saved.
-   ![](https://github.com/3epiossi/Neatlab/blob/main/esp32_csi/data_collect.png)
-8. **Train the LSTM Model**
-   ```bash
-   cd ~/Neatlab/esp32_csi
-   python train_lstm.py
-   ```
-   This program will train LSTM model base on your data collected in step 7, and gives you Loss curve and Confusion matrix as the result.
-   ![](https://github.com/3epiossi/Neatlab/blob/main/esp32_csi/result.png)
+   ![](/demo/window.png)
+9.  **Train the LSTM Model**
+      ```bash
+      python train_lstm.py
+      ```
+     This program will train LSTM model base on your data collected in step 7, and gives you Loss curve, Confusion matrix and tfModel.h as the result.
+
+    <img src="demo/loss_curve.png" width="200"/> <img src="demo/confusion_matrix.png" width="200"/>
+
+10. Move tfModel.h from `output/tfModel.h` to `csi_recv_lstm/main/tfModel.h`
+    ```bash
+    mv ./output/tfMode.h ./csi_recv_lstm/main/tfModel.h
+    ```
+11. Comment `#define DATA_COLLECTION_MODE` to switch mode. 
+   * In csi_recv_lstm/main/app_main.cpp, 27th row.
+
+12. Build and flash the receiver firmware
+      ```bash
+      cd csi_recv_lstm
+      idf.py set-target esp32
+      idf.py build
+      idf.py -p <PORT> [-b BAUD] flash
+      idf.py monitor -p <your port name>
+      ```
+
+13. Now, you may see the prediction in your terminal.
 ## License
 This project is licensed under the GNU License – see the [LICENSE.md](https://github.com/3epiossi/Neatlab/blob/main/esp32_csi/LICENSE.md) file for details
 
-# 專案解釋
-專案目的：
-讓esp32可以自主發送帶有CSI的訊號，而且自主預測箱子裡面物品的材質。
-以下是這個專案的結構
+## Project explaination
+(專案材料照片)
+### The structure of this project:
 ```bash
 .
 ├── .gitignore
@@ -128,29 +168,30 @@ This project is licensed under the GNU License – see the [LICENSE.md](https://
 ├── requirements.txt
 └── train_lstm.py
 ```
-以下我會挑出幾個重要檔案來解釋他們的功用：
+### File (or Folders) Simple Explanations
+Here I will pick out a few important files (or folders) to explain their functions:
 1. csi_send:
-   * esp32 csi發送端所需的程式碼
+   * ESP32 CSI sending terminal's code required(Sends CSI Data 10 HZ frequency)
 2. csi_recv_lstm:
-   * esp32 csi接收端的程式碼，負責兩個工作（非同時負責）
-      1. 當PC在收集資料時，csi_recv_lstm會回傳接受到的資料(recv模式)
-      2. 使用PC訓練好的模型來預測時，csi_recv_lstm負責實際執行預測，並把預測結果回傳到PC(lstm模式)
-      3. 兩者差異可以用以下圖片看出
+   * The code of the esp32 csi receiving end is responsible for two tasks (not responsible at the same time).
+      1. When the PC collects data, csi_recv_lstm will return the received data (data_collection mode).
+      2. When using a PC-trained model to predict, csi_recv_lstm is responsible for actually performing the prediction and returning the prediction results to the PC (predict mode).
+      3. The difference between the two can be seen using the following flowchart.
       ![](/demo/csi_recv_lstm.png)
 3. parser.py:
-   * 解析csi_recv_lstm回傳的資料(recv模式)
-   * 將解析好的資料放在作為標籤的資料夾
+   * Analyze the data returned by csi_recv_lstm (data_collection mode).
+   * Place the parsed data in data folder classified with label.
 4. dataprocess:
-   * 將已經做好標籤的資料夾的資料做解析與轉換
-   * 輸出dataset，供train_lstm.py訓練使用
+   * Analyze and convert the data of the folder that has been classified.
+   * Output dataset for training lstm.py
 5. train_lstm.py：
-   * 將dataset拿來訓練
-   * 訓練好的模型會放在output資料夾中（程式運行中會自動生成output資料夾）
+   * Use dataset for training
+   * The trained model will be placed in the output folder (the output folder will be automatically generated during the program running).
 
-專案邏輯：
+### Flowchart of This Project:
 ![](/demo/project_logic.png)
 
-執行結果：
+### Result:
 1. ![loss curve](/demo/confusion_matrix.png)
 2. ![](/demo/loss_curve.png)
-3. [示範影片](https://www.youoube.com/shorts/uEpaOsHhDUo)
+3. [demo video](https://www.youoube.com/shorts/uEpaOsHhDUo)
