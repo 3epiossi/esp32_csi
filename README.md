@@ -18,16 +18,20 @@ This project can perform edge computing to predict the material inside the box�
 - [x] Use argparse and logger for debugging 
 - [x] Visualize loss curve and confusion matrix
 - [x] Collect a large amount of experimental CSI data.
-  * It can be considered as completing a part of the project, which can distinguish whether there are plastic bottles inside boxes or bags.
+   > ⚠️**Notice**
+   >> It can be considered as completing a part of the project, which can distinguish whether there are plastic bottles inside boxes or bags.
 - [x] Send the trained model parameters to ESP32 with TinyML so that the ESP32 can perform prediction(edge computing). 
-  * Starting from this task, I will use Keras to restructure the entire project for easier deployment of TinyML.
+  > ⚠️**Notice**
+  >> Starting from this task, I will use Keras to restructure the entire project for easier deployment of TinyML.
 - [x] Test the model in practice and optimize it.
-  * Big problem: the system always predicts something inside the box—even when there’s nothing there.
+
+  > ⁉️**Warning**
+  >> The system always predicts something inside the box—even when there’s nothing there.
   
   <img src="demo/something_inside.png" width="500"/>
   
   > ⚠️ **Notice**  
-  > maybe solved(not the best) :
+  >> maybe solved(not the best) :
 
   <img src="demo/confusion_matrix.png" width="500"/>
 
@@ -128,7 +132,6 @@ Following operations are based on Macos.
 This project is licensed under the GNU License – see the [LICENSE.md](https://github.com/3epiossi/Neatlab/blob/main/esp32_csi/LICENSE.md) file for details
 
 ## Project explaination
-(專案材料照片)
 ### The structure of this project:
 ```bash
 .
