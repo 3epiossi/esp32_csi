@@ -39,7 +39,7 @@ static QueueHandle_t queue;
     #define CHANNEL_NUM TF_NUM_INPUTS_SUBCARRIER
     #define LLTF_INTERVAL ((26/LLTF+1) << 1)
     #define HT_LFT_INTERVAL ((28/HT_LFT+1) << 1)
-    #define TENSOR_ARENA_SIZE (100 * 1024)
+    #define TENSOR_ARENA_SIZE (96 * 1024)
     static uint8_t tensor_arena[TENSOR_ARENA_SIZE];
     namespace {
         const tflite::Model* model = nullptr;
@@ -301,7 +301,7 @@ extern "C" void app_main()
         return;
     }
     #endif
-    queue = xQueueCreate(20, sizeof(float*));
+    queue = xQueueCreate(WINDOW_SIZE, sizeof(float*));
     TaskHandle_t xHandle = NULL;
     BaseType_t xReturned;
     xReturned = xTaskCreate(
