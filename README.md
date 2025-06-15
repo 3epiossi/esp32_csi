@@ -1,7 +1,6 @@
 # Neatlab esp32 CSI(channel state information) project
-![](/demo/doge.png)
+<img src="demo/doge.png" width="500"/>
 This project can perform edge computing to predict the material inside the box—no need to send data back to a PC.
-![](/demo/demo_video.gif)
 ## Acknowledgments
 1. **Espressif Official**: 
    Without your [esp-idf](https://github.com/espressif/esp-idf) and [esp-csi](https://github.com/espressif/esp-csi) examples, I wouldn’t even know where to start.
@@ -41,7 +40,7 @@ Following operations are based on Macos.
 - Two ESP32-32U modules
 - Two antennas
 - One Laptop
-![](/demo/setting.jpg)
+<img src="demo/setting.jpg" width="500"/>
 ### Virtual Environment
 - Miniconda
 
@@ -102,7 +101,7 @@ Following operations are based on Macos.
       ```
    This will open a window displaying real-time CSI data visualization.
    Once you close the window, the program will terminate and one data point will be collected and saved.
-   ![](/demo/window.png)
+   <img src="demo/window.png" width="500"/>
 9.  **Train the LSTM Model**
       ```bash
       python train_lstm.py
@@ -180,7 +179,7 @@ Here I will pick out a few important files (or folders) to explain their functio
       1. When the PC collects data, csi_recv_lstm will return the received data (data_collection mode).
       2. When using a PC-trained model to predict, csi_recv_lstm is responsible for actually performing the prediction and returning the prediction results to the PC (predict mode).
       3. The difference between the two can be seen using the following flowchart.
-      ![](/demo/csi_recv_lstm.png)
+      <img src="demo/csi_recv_lstm.png" width="400"/>
 3. parser.py:
    * Analyze the data returned by csi_recv_lstm (data_collection mode).
    * Place the parsed data in data folder classified with label.
@@ -192,9 +191,9 @@ Here I will pick out a few important files (or folders) to explain their functio
    * The trained model will be placed in the output folder (the output folder will be automatically generated during the program running).
 
 ### Flowchart of This Project:
-![](/demo/project_logic.png)
+<img src="demo/project_logic.png" width="500"/>
 
 ### Result:
-1. ![loss curve](/demo/confusion_matrix.png)
-2. ![](/demo/loss_curve.png)
+1. <img src="demo/loss_curve.png" width="500"/>
+2. <img src="demo/confusion_matrix.png" width="500"/>
 3. [demo video](https://www.youoube.com/shorts/uEpaOsHhDUo)
