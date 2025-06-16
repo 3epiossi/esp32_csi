@@ -42,6 +42,7 @@ Following operations are based on Macos.
 - Two antennas
 - One Laptop
 <img src="demo/setting.jpg" width="500"/>
+
 ### Virtual Environment
 - Miniconda
 
