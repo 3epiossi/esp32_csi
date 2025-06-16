@@ -1,5 +1,6 @@
 # Neatlab esp32 CSI(channel state information) project
 <img src="demo/doge.png" width="500"/>
+
 This project can perform edge computing to predict the material inside the box—no need to send data back to a PC.
 ## Acknowledgments
 1. **Espressif Official**: 
